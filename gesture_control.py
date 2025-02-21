@@ -1,7 +1,7 @@
 import cv2
 import mediapipe as mp
 import pyautogui
-import time,
+import time
 
 # Initialize Mediapipe Hand Detection
 mp_hands = mp.solutions.hands

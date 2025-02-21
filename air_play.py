@@ -57,8 +57,9 @@ while cap.isOpened():
             index_tip = landmarks[8]
             thumb_tip = landmarks[4]
             middle_tip = landmarks[12]
+            pinky_tip = landmarks[20]
             
-            hand_list.append((wrist, index_tip, thumb_tip, middle_tip))
+            hand_list.append((wrist, index_tip, thumb_tip, middle_tip, pinky_tip))
             
             # Store hand positions to track movement
             if hand_idx not in hand_positions:
@@ -66,19 +67,19 @@ while cap.isOpened():
             movement = wrist.x - hand_positions[hand_idx]
             
             # Swipe Left (Previous Slide)
-            if movement > 0.15:
+            if movement > 0.2:
                 perform_action("left")
                 hand_positions[hand_idx] = wrist.x
             # Swipe Right (Next Slide)
-            elif movement < -0.15:
+            elif movement < -0.2:
                 perform_action("right")
                 hand_positions[hand_idx] = wrist.x
             
             # Swipe Up (Scroll Up)
-            if index_tip.y < 0.2:
+            if wrist.y < 0.3:
                 perform_action("scroll_up")
             # Swipe Down (Scroll Down)
-            elif index_tip.y > 0.8:
+            elif wrist.y > 0.7:
                 perform_action("scroll_down")
             
             # Thumbs Up (Start Slideshow)
@@ -97,8 +98,8 @@ while cap.isOpened():
             
         # Zoom In/Out Detection (Two Hands Required)
         if len(hand_list) == 2:
-            wrist1, index1, thumb1, _ = hand_list[0]
-            wrist2, index2, thumb2, _ = hand_list[1]
+            wrist1, index1, thumb1, middle1, _ = hand_list[0]
+            wrist2, index2, thumb2, middle2, _ = hand_list[1]
             
             distance = np.linalg.norm(np.array([index1.x, index1.y]) - np.array([index2.x, index2.y]))
             
