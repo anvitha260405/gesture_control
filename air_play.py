@@ -4,7 +4,7 @@ import pyautogui
 import time
 import numpy as np
 
-# Initialize Mediapipe Hand Detection hello
+# Initialize Mediapipe Hand Detection
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
 hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7, max_num_hands=2)
@@ -14,6 +14,7 @@ cap = cv2.VideoCapture(0)
 last_action_time = time.time()
 prev_distance = None
 laser_active = False
+hand_positions = {}
 
 # Function to perform actions
 def perform_action(action):
@@ -48,23 +49,30 @@ while cap.isOpened():
     
     if results.multi_hand_landmarks:
         hand_list = []
-        for hand_landmarks in results.multi_hand_landmarks:
+        for hand_idx, hand_landmarks in enumerate(results.multi_hand_landmarks):
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
             
             landmarks = hand_landmarks.landmark
+            wrist = landmarks[0]
             index_tip = landmarks[8]
             thumb_tip = landmarks[4]
-            wrist = landmarks[0]
             middle_tip = landmarks[12]
             
-            hand_list.append((index_tip, thumb_tip, middle_tip))
+            hand_list.append((wrist, index_tip, thumb_tip, middle_tip))
+            
+            # Store hand positions to track movement
+            if hand_idx not in hand_positions:
+                hand_positions[hand_idx] = wrist.x
+            movement = wrist.x - hand_positions[hand_idx]
             
             # Swipe Left (Previous Slide)
-            if index_tip.x < 0.2:
+            if movement > 0.15:
                 perform_action("left")
+                hand_positions[hand_idx] = wrist.x
             # Swipe Right (Next Slide)
-            elif index_tip.x > 0.8:
+            elif movement < -0.15:
                 perform_action("right")
+                hand_positions[hand_idx] = wrist.x
             
             # Swipe Up (Scroll Up)
             if index_tip.y < 0.2:
@@ -89,8 +97,8 @@ while cap.isOpened():
             
         # Zoom In/Out Detection (Two Hands Required)
         if len(hand_list) == 2:
-            index1, thumb1, _ = hand_list[0]
-            index2, thumb2, _ = hand_list[1]
+            wrist1, index1, thumb1, _ = hand_list[0]
+            wrist2, index2, thumb2, _ = hand_list[1]
             
             distance = np.linalg.norm(np.array([index1.x, index1.y]) - np.array([index2.x, index2.y]))
             
